@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scraping via Iframe</title>
+</head>
+<body>
+    <h2>Embedded Website</h2>
+    <iframe id="myFrame" src="https://www.instacart.com/store/sprouts/storefront" width="100%" height="600px"></iframe>
+
+    <script>
+        document.getElementById("myFrame").onload = function () {
+            try {
+                let frameDoc = document.getElementById("myFrame").contentDocument || document.getElementById("myFrame").contentWindow.document;
+                let images = frameDoc.querySelectorAll("img");
+                console.log("Images:", images);
+            } catch (error) {
+                console.error("❌ Cannot access iframe content due to CORS restrictions:", error);
+            }
+        };
+    </script>
+</body>
+</html>
