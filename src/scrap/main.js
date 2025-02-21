@@ -123,7 +123,7 @@ export async function scrapeInstacart(searchURL) {
     let num = 500;
 
     while (true) {
-      // await dummyScrap()
+      await dummyScrap()
       await newScrap(num);
       num++;
     }
