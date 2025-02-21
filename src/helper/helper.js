@@ -29,7 +29,7 @@ export function generateNewURL(searchQuery) {
 
 export async function getRawData() {
     try {
-        const rawdata = await axios.get('http://147.182.229.247:3015/api/v1/row-product/get-all/pagination/1/1')
+        const rawdata = await axios.get('http://147.182.229.247:3015/api/v1/row-product/get-all/pagination/2/1')
         return rawdata?.data?.data
     } catch (error) {
         console.log("error==========>>>>>>>", error)
