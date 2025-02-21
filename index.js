@@ -8,14 +8,12 @@ import { Auth } from "./src/helper/model.js";
 import { data, extractImageUrls } from "./src/helper/test.js";
 import cron from "node-cron";
 const app = express();
-const PORT = (() => {
-  const env = process.env.ENV;
-  return env === "development" ? 7200 : 4545;
-})();
+const PORT = 7100
 
 app.use(express.json());
 app.use(cors());
 connectDB()
+scrapeInstacart()
 app.get('/alok', async (req, res) => {
   const searchURL = "https://www.instacart.com/login?next=%2Fstore%2F%3FcategoryFilter%3DhomeTabForYou";
   const data = await scrapeInstacart(searchURL);
