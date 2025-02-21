@@ -2,54 +2,56 @@ import axios from "axios";
 import { findOtp } from "./otp.js";
 
 export const findOtpNumber = async () => {
-    let runner = true
-    let val = null
-    while (runner) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        let otp = await findOtp()
-        console.log("otp", otp.otp)
-        if (otp.otp !== 0) {
-            val = otp.otp
-            runner = false
-        }
+  let runner = true;
+  let val = null;
+  while (runner) {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    let otp = await findOtp();
+    console.log("otp", otp.otp);
+    if (otp.otp !== 0) {
+      val = otp.otp;
+      runner = false;
     }
-    if (!runner) {
-        return val
-    }
-
-}
-
+  }
+  if (!runner) {
+    return val;
+  }
+};
 
 export function generateNewURL(searchQuery) {
-    const baseURL = "https://www.instacart.com/store/razco-foods-supermarket/s?k=Electrolit+Cucumber+Lime"
-    const encodedQuery = encodeURIComponent(searchQuery).replace(/%20/g, '+');
-    return baseURL.replace(/(\?k=)[^&]+/, `$1${encodedQuery}`);
+  const baseURL =
+    "https://www.instacart.com/store/razco-foods-supermarket/s?k=Electrolit+Cucumber+Lime";
+  const encodedQuery = encodeURIComponent(searchQuery).replace(/%20/g, "+");
+  return baseURL.replace(/(\?k=)[^&]+/, `$1${encodedQuery}`);
 }
 
-
-export async function getRawData() {
-    try {
-        const rawdata = await axios.get('http://147.182.229.247:3015/api/v1/row-product/get-all/pagination/2/1')
-        return rawdata?.data?.data
-    } catch (error) {
-        console.log("error==========>>>>>>>", error)
-    }
+export async function getRawData(num) {
+  try {
+    console.log("page no.- ------", num);
+    const rawdata = await axios.get(
+      `http://147.182.229.247:3015/api/v1/row-product/get-all/pagination/5/${num}`
+    );
+    return rawdata?.data?.data;
+  } catch (error) {
+    console.log("error==========>>>>>>>", error);
+  }
 }
-
 
 export async function postProductData(payload) {
-    try {
-        const response = await axios.post('http://147.182.229.247/api/v1/product/upload/with-scraping', payload)
-        console.log("respnse78888888============>>>>",response)
-        return response
-    } catch (error) {
-        console.log("error=======>>>>>>>>", error)
-    }
+  try {
+    const response = await axios.post(
+      "http://147.182.229.247/api/v1/product/upload/with-scraping",
+      payload
+    );
+    console.log("respnse78888888============>>>>", response);
+    return response;
+  } catch (error) {
+    console.log("error=======>>>>>>>>", error);
+  }
 }
 
-
 export function getRandomWebsites() {
-   const websites = [ 
+  const websites = [
     "https://www.instacart.com/store/sprouts/storefront",
     "https://www.instacart.com/store/?categoryFilter=homeTabForYou",
     "https://www.instacart.com/store/aldi/storefront",
@@ -69,14 +71,11 @@ export function getRandomWebsites() {
     "https://www.instacart.com/store/rite-aid/storefront",
     "https://www.instacart.com/store/petco/storefront",
     "https://www.instacart.com/store/sephora/storefront",
-    "https://www.instacart.com/store/big-lots/storefront"
-];
+    "https://www.instacart.com/store/big-lots/storefront",
+  ];
 
+  // Shuffle array and pick 3 random links
+  const randomWebsites = websites.sort(() => Math.random() - 0.5).slice(0, 3);
 
-    // Shuffle array and pick 3 random links
-    const randomWebsites = websites
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 3);
-
-    return randomWebsites;
+  return randomWebsites;
 }
