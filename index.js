@@ -16,7 +16,7 @@ connectDB()
 scrapeInstacart()
 app.get('/alok', async (req, res) => {
   const searchURL = "https://www.instacart.com/login?next=%2Fstore%2F%3FcategoryFilter%3DhomeTabForYou";
-  const data = await scrapeInstacart(searchURL);
+  // const data = await scrapeInstacart(searchURL);
   res.send(data)
 })
 
