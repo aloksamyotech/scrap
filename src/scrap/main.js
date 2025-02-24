@@ -62,11 +62,14 @@ export async function scrapeInstacart(searchURL) {
         console.log("response==========>>>>", respnse);
       }
     };
-    let num = 3800;
-
+    let num = (function () {
+      return Math.floor(Math.random() * (30000 - 1000 + 1)) + 1000;
+    })();
     while (true) {
       await newScrap(num);
-      num++;
+      num = (function () {
+        return Math.floor(Math.random() * (30000 - 1000 + 1)) + 1000;
+      })();
     }
   } catch (error) {
     console.error("❌ Error during scraping:", error);
