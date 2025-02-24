@@ -13,7 +13,7 @@ export async function scrapeInstacart(searchURL) {
   console.log(`🚀 Launching Puppeteer to scrape: ${searchURL}`);
   try {
     const browser = await puppeteer.launch({
-      headless: true,
+      headless: false,
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
@@ -31,8 +31,8 @@ export async function scrapeInstacart(searchURL) {
         var screpUrl = generateNewURL(searchItem?.item_name_extended);
         console.log("screpUrl", screpUrl)
         console.log(`🌍 Navigating to: ${screpUrl}`);
-        let i = screpUrl.split("+").length
-        while (i > 3) {
+      
+        while (screpUrl.split("+").length > 2) {
           console.log("imaurl===========>>>", screpUrl)
           productDivs = await findImageUrl(page, screpUrl, searchItem);
           if (productDivs.length) break
@@ -71,7 +71,7 @@ export async function scrapeInstacart(searchURL) {
 }
 
 
-const findImageUrl = async (page, screpUrl, searchItem) => {
+  const findImageUrl = async (page, screpUrl, searchItem) => {
   await page.goto(screpUrl);
   await new Promise((resolve) => setTimeout(resolve, 5000));
   console.log(
