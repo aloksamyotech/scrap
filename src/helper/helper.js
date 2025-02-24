@@ -29,7 +29,7 @@ export async function getRawData(num) {
     try {
         console.log("page no.- ------", num);
         const rawdata = await axios.get(
-            `http://147.182.229.247:3015/api/v1/row-product/get-all/pagination/5/${num}`
+            `http://147.182.229.247:3015/api/v1/row-product/get-all/pagination/1/${num}`
         );
         return rawdata?.data?.data;
     } catch (error) {
