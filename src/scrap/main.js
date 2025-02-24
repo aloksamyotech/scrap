@@ -26,16 +26,16 @@ export async function scrapeInstacart(searchURL) {
     const newScrap = async (num) => {
       const values = await getRawData(num);
       let results = [];
-      var productDivs
+      var productDivs;
       for (const searchItem of values) {
         var screpUrl = generateNewURL(searchItem?.item_name_extended);
-        console.log("screpUrl", screpUrl)
+        console.log("screpUrl", screpUrl);
         console.log(`🌍 Navigating to: ${screpUrl}`);
-      
+
         while (screpUrl.split("+").length > 2) {
-          console.log("imaurl===========>>>", screpUrl)
+          console.log("imaurl===========>>>", screpUrl);
           productDivs = await findImageUrl(page, screpUrl, searchItem);
-          if (productDivs.length) break
+          if (productDivs.length) break;
           console.log("productDivs:", productDivs);
           screpUrl = screpUrl.split("+").slice(0, -1).join("+");
         }
@@ -44,6 +44,7 @@ export async function scrapeInstacart(searchURL) {
           _id: searchItem?._id,
           image_urls: imageUrls.slice(0, 2),
           isralavent: false,
+          scrapedBy: "Ankit Kesariya",
         });
         console.log("results========>>>", results);
       }
@@ -66,12 +67,10 @@ export async function scrapeInstacart(searchURL) {
   } finally {
     console.log("🔴 Closing Puppeteer...");
     await Auth.updateOne({ otp: 0 });
-
   }
 }
 
-
-  const findImageUrl = async (page, screpUrl, searchItem) => {
+const findImageUrl = async (page, screpUrl, searchItem) => {
   await page.goto(screpUrl);
   await new Promise((resolve) => setTimeout(resolve, 5000));
   console.log(
@@ -82,6 +81,5 @@ export async function scrapeInstacart(searchURL) {
     return Array.from(productContainers).map((div) => div.outerHTML);
   });
 
-  return productDivs
-
-}
+  return productDivs;
+};
