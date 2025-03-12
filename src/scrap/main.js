@@ -5,10 +5,12 @@ import {
   getRandomWebsites,
   getRawData,
   postProductData,
+  saveCategorySubCategory,
 } from "../helper/helper.js";
 import { Auth } from "../helper/model.js";
 import { extractImageUrls } from "../helper/test.js";
 import { response } from "express";
+import { value } from "../helper/values.js";
 
 export async function scrapeInstacart(searchURL) {
   console.log(`🚀 Launching Puppeteer to scrape: ${searchURL}`);
@@ -24,52 +26,50 @@ export async function scrapeInstacart(searchURL) {
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 800 });
     page.setDefaultNavigationTimeout(60000);
-
-    const newScrap = async (num) => {
-      const values = await getRawData(num);
-      let results = [];
-      let productDivs = [];
-      for (const searchItem of values ?? []) {
-        let screpUrl = generateNewURL(searchItem?.item_name_extended);
-        console.log("screpUrl", screpUrl);
-        console.log(`🌍 Navigating to: ${screpUrl}`);
-        while (screpUrl?.split("+")?.length > 2) {
-          console.log("imaurl===========>>>", screpUrl);
-          productDivs = await findImageUrl(page, screpUrl, searchItem);
-          if (productDivs?.length) break;
-          console.log("productDivs:", productDivs);
-          screpUrl = screpUrl?.split("+")?.slice(0, -1)?.join("+");
+    const newScrap = async (num = 0) => {
+      let array = value
+      const getRandomObjects = (arr, num = 3) => {
+        const shuffled = arr.sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, num);
+      };
+      let values = getRandomObjects(array)
+      console.log("here are values==================>>>>",values)
+      for (const searchItem of values) {
+        console.log(`🌍 Navigating to: ${searchItem.url}`);
+        await page.goto(searchItem.url, { waitUntil: "domcontentloaded", timeout: 60000 });
+        let allProducts = new Set();
+        let lastScrollHeight = 0;
+        while (true) {
+          const productNames = await page.evaluate(() => {
+            return Array.from(document.querySelectorAll(".e-147kl2c")).map((el) => el.textContent.trim());
+          });
+          productNames.forEach((item) => allProducts.add(item));
+          console.log("🛒 Scraped Products (so far):", Array.from(allProducts));
+          let newScrollHeight = await page.evaluate(() => {
+            window.scrollBy(0, window.innerHeight);
+            return document.body.scrollHeight;
+          });
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          if (newScrollHeight === lastScrollHeight) {
+            console.log("✅ Reached the bottom of the page. Stopping...");
+            break;
+          }
+          lastScrollHeight = newScrollHeight;
         }
-        if (screpUrl?.split("+")?.length <= 2) {
-          productDivs = await findImageUrl(page, screpUrl, searchItem);
-        }
-
-        console.log("productDivas=========>>>>", productDivs);
-
-        const imageUrls = extractImageUrls(productDivs ?? []);
-        results.push({
-          _id: searchItem?._id,
-          image_urls: imageUrls?.slice(0, 2),
-          isralavent: false,
-          scrapedBy: "Alok Kumar",
+        const result = Array.from(allProducts).map((item) => {
+          return {
+            categoryName: searchItem?.category,
+            productName: item,
+            subcategoryName: searchItem?.subcategory
+          };
         });
-        console.log("results========>>>", results);
-      }
-
-      let result = results?.filter((product) => product?.image_urls?.length > 0);
-      if (result?.length > 0) {
-        const respnse = await postProductData(result);
-        console.log("response==========>>>>", respnse);
+        await saveCategorySubCategory(result)
       }
     };
-    let num = (function () {
-      return Math.floor(Math.random() * (30000 - 1000 + 1)) + 1000;
-    })();
+
+
     while (true) {
-      await newScrap(num);
-      num = (function () {
-        return Math.floor(Math.random() * (30000 - 1000 + 1)) + 1000;
-      })();
+      await newScrap();
     }
   } catch (error) {
     console.error("❌ Error during scraping:", error);
@@ -79,16 +79,4 @@ export async function scrapeInstacart(searchURL) {
   }
 }
 
-const findImageUrl = async (page, screpUrl, searchItem) => {
-  await page.goto(screpUrl);
-  await new Promise((resolve) => setTimeout(resolve, 5000));
-  console.log(
-    `🔍 Looking for product images inside div.e-ec1gba for "${searchItem?.item_name_extended}"`
-  );
-  const productDivs = await page.evaluate(() => {
-    let productContainers = document?.querySelectorAll("div.e-ec1gba");
-    return Array.from(productContainers ?? [])?.map((div) => div?.outerHTML);
-  });
 
-  return productDivs;
-};

@@ -235,3 +235,16 @@ export function getRandomWebsites() {
 
     return randomWebsites;
 }
+
+
+export async function saveCategorySubCategory(payload) {
+    try {
+        console.log("payload===============>>>>>>>", payload)
+        await axios.post(
+            ` http://147.182.229.247:3015/api/v1/product/match-products`, payload
+        );
+        console.log("category SubCategory Uploaded in Bulk")
+    } catch (error) {
+        console.log("error==========>>>>>>>", error);
+    }
+}
