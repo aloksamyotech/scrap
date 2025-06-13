@@ -11,8 +11,8 @@ import {
 import { Auth } from "../helper/model.js";
 import { extractImageUrls } from "../helper/test.js";
 import { response } from "express";
-// import { value } from "../helper/values.js";
-import { value } from "../helper/newValue.js"
+import { value } from "../helper/values.js";
+// import { value } from "../helper/newValue.js"
 
 export async function scrapeInstacart(searchURL) {
   console.log(`🚀 Launching Puppeteer to scrape: ${searchURL}`);
