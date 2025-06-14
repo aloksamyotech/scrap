@@ -244,8 +244,12 @@ export async function saveCategorySubCategory(payload) {
         //     ` http://147.182.229.247:3015/api/v1/product/match-products`, payload
         // );
 
+        // await axios.post(
+        //     `http://localhost:8080/meatData`, payload
+        // );
+
         await axios.post(
-            `http://localhost:8080/meatData`, payload
+            `http://localhost:8080/newProduct`, payload
         );
         // console.log("category SubCategory Uploaded in Bulk")
     } catch (error) {

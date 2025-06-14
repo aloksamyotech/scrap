@@ -14,8 +14,8 @@ app.use(express.json());
 app.use(cors());
 connectDB()
 // scrapeInstacart()
-scrapeInstacart2();
-// scrapeInstacart3();
+// scrapeInstacart2();
+scrapeInstacart3();
 app.get('/alok', async (req, res) => {
   const searchURL = "https://www.instacart.com/login?next=%2Fstore%2F%3FcategoryFilter%3DhomeTabForYou";
   // const data = await scrapeInstacart(searchURL);

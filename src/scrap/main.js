@@ -334,10 +334,12 @@ export async function scrapeInstacart2() {
 
 
 
-export async function scrapeInstacart3(searchURL) {
-  console.log(`🚀 Launching Puppeteer to scrape: ${searchURL}`);
+export async function scrapeInstacart3() {
+  console.log("🚀 Launching Puppeteer for linear scraping...");
+  let browser;
+
   try {
-    const browser = await puppeteer.launch({
+    browser = await puppeteer.launch({
       headless: false,
       args: [
         "--no-sandbox",
@@ -345,145 +347,152 @@ export async function scrapeInstacart3(searchURL) {
         "--disable-blink-features=AutomationControlled",
       ],
     });
+
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 800 });
     page.setDefaultNavigationTimeout(60000);
 
-    const newScrap = async () => {
-      let array = value; // value must be your array of { url, category, subcategory }
-      const getRandomObjects = (arr, num = 3) => {
-        const shuffled = arr.sort(() => 0.5 - Math.random());
-        return shuffled.slice(0, num);
-      };
-      let values = getRandomObjects(array);
-
-      for (const searchItem of values) {
-        console.log(`🌍 Navigating to: ${searchItem.url}`);
-        await page.goto(searchItem.url, {
-          waitUntil: "domcontentloaded",
-          timeout: 60000,
-        });
-
-        let allProducts = new Set();
-        let lastScrollHeight = 0;
-
-        while (true) {
-          const products = await scrapeVerticalProducts(page);
-          products.forEach((item) => allProducts.add(JSON.stringify(item)));
-
-          let newScrollHeight = await page.evaluate(() => {
-            window.scrollBy(0, window.innerHeight);
-            return document.body.scrollHeight;
-          });
-
-          await new Promise((res) => setTimeout(res, 1500));
-          if (newScrollHeight === lastScrollHeight) break;
-          lastScrollHeight = newScrollHeight;
-        }
-
-        const carouselProducts = await scrapeCarouselProducts(page);
-        carouselProducts.forEach((item) => allProducts.add(JSON.stringify(item)));
-
-        const result = Array.from(allProducts).map((item) => {
-          const parsed = JSON.parse(item);
-          return {
-            price: parsed.price,
-            image_urls: [parsed.imageOne, parsed.imageTwo],
-            categoryName: searchItem?.category,
-            productName: parsed.name,
-            subcategoryName: searchItem?.subcategory,
-          };
-        });
-
-        console.log(`🧾 Final scraped products for ${searchItem.subcategory}:`, result.length);
-        await saveCategorySubCategory(result);
-      }
-    };
+    const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
     while (true) {
-      await newScrap();
+      for (let i = 0; i < value.length; i++) {
+        const searchItem = value[i];
+        let productsScraped = 0;
+
+        console.log(`🌍 Navigating to: ${searchItem.url}`);
+
+        while (productsScraped === 0) {
+          try {
+            await page.goto(searchItem.url, {
+              waitUntil: "domcontentloaded",
+              timeout: 60000,
+            });
+
+            let allProducts = [];
+            let seen = new Set();
+            let lastScrollHeight = 0;
+
+            while (true) {
+              const products = await page.evaluate(() => {
+                function parseSrcset(srcset) {
+                  const regex = /([^,\s]+?\([^)]*?\)[^,\s]*|[^,\s]+)(?:\s+[0-9\.]+x)?/g;
+                  const matches = [];
+                  let match;
+                  while ((match = regex.exec(srcset)) !== null) {
+                    matches.push(match[1]);
+                  }
+                  return matches;
+                }
+
+                return Array.from(
+                  document.querySelectorAll('[aria-label="Product"]')
+                ).map((product) => {
+                  const nameEl =
+                    product.querySelector("h2") ||
+                    product.querySelector("a") ||
+                    product.querySelector("div");
+
+                  const name = nameEl ? nameEl.textContent.trim() : null;
+
+                  const priceEl =
+                    product.querySelector('[class*="price"]') ||
+                    product.querySelector(".e-1ip314g");
+                  const price = priceEl ? priceEl.textContent.trim() : null;
+
+                  const img = product.querySelector("img");
+                  let imageUrls = [];
+                  if (img) {
+                    const srcset = img.getAttribute("srcset");
+                    if (srcset) {
+                      imageUrls = parseSrcset(srcset).slice(0, 2);
+                    } else if (img.src) {
+                      imageUrls = [img.src];
+                    }
+                  }
+
+                  return {
+                    name,
+                    price,
+                    imageOne: imageUrls[0] || null,
+                    imageTwo: imageUrls[1] || null,
+                  };
+                });
+              });
+
+              const cleanedData = products.map((item) => {
+                let name = item.name || "";
+                name = name.replace(/Current price:\s*\$\d+\.\d+|\$\d+/g, "").trim();
+
+                let price = item.price || "";
+                if (/^\$\d+$/.test(price)) {
+                  const numeric = price.replace("$", "");
+                  price = `$${numeric.slice(0, -2)}.${numeric.slice(-2)}`;
+                }
+
+                return {
+                  name,
+                  price,
+                  imageOne: item.imageOne,
+                  imageTwo: item.imageTwo,
+                };
+              });
+
+              cleanedData.forEach((item) => {
+                const key = `${item.name}|${item.price}`;
+                if (!seen.has(key)) {
+                  seen.add(key);
+                  allProducts.push(item);
+                }
+              });
+
+              const newScrollHeight = await page.evaluate(() => {
+                window.scrollBy(0, window.innerHeight);
+                return document.body.scrollHeight;
+              });
+
+              await delay(1500);
+              if (newScrollHeight === lastScrollHeight) {
+                console.log("✅ Reached end of page.");
+                break;
+              }
+              lastScrollHeight = newScrollHeight;
+            }
+
+            productsScraped = allProducts.length;
+
+            if (productsScraped > 0) {
+              const result = allProducts.map((item) => ({
+                price: item.price,
+                image_urls: [item.imageOne, item.imageTwo],
+                categoryName: searchItem?.category,
+                productName: item.name,
+                subcategoryName: searchItem?.subcategory,
+              }));
+
+              console.log(`🛒 Scraped ${result.length} products from ${searchItem.url}`);
+              await saveCategorySubCategory(result);
+              await delay(5000); // pause before next index
+            } else {
+              console.log(`🔁 No products found at ${searchItem.url}. Retrying...`);
+              await delay(3000);
+            }
+
+          } catch (err) {
+            console.error(`❌ Error scraping ${searchItem.url}`, err);
+            console.log(`🔁 Retrying index ${i} (${searchItem.url})...`);
+            await delay(5000); // wait before retry
+          }
+        }
+      }
+
+      console.log("🔁 Completed full pass through all categories. Restarting...");
+      // await delay(3000);
+      break;
     }
   } catch (error) {
     console.error("❌ Error during scraping:", error);
   } finally {
     console.log("🔴 Closing Puppeteer...");
+    if (browser) await browser.close();
   }
-}
-
-// Helper to scrape vertical scrollable items
-async function scrapeVerticalProducts(page) {
-  return await page.evaluate(() => {
-    function parseSrcset(srcset) {
-      const regex = /([^,\s]+?\([^)]*?\)[^,\s]*|[^,\s]+)(?:\s+[0-9\.]+x)?/g;
-      const matches = [];
-      let match;
-      while ((match = regex.exec(srcset)) !== null) {
-        matches.push(match[1]);
-      }
-      return matches;
-    }
-
-    return Array.from(document.querySelectorAll('[aria-label="Product"]')).map((product) => {
-      const nameEl = product.querySelector(".e-xahufp, h2, a");
-      const name = nameEl ? nameEl.textContent.trim() : null;
-
-      const priceEl = product.querySelector(".e-1ip314g");
-      const price = priceEl ? priceEl.textContent.trim() : null;
-
-      const img = product.querySelector("img");
-      let imageUrls = [];
-      if (img) {
-        const srcset = img.getAttribute("srcset");
-        if (srcset) {
-          imageUrls = parseSrcset(srcset).slice(0, 2);
-        } else if (img.src) {
-          imageUrls = [img.src];
-        }
-      }
-
-      return {
-        name,
-        price,
-        imageOne: imageUrls[0] || null,
-        imageTwo: imageUrls[1] || null,
-      };
-    });
-  });
-}
-
-// Helper to scrape horizontal carousel products
-async function scrapeCarouselProducts(page) {
-  const productSelector = '[aria-label="Product"]';
-  const arrowSelector = 'button[aria-label="Next page"]';
-  let seen = new Set();
-  let allProducts = [];
-
-  while (true) {
-    const products = await scrapeVerticalProducts(page);
-    for (const item of products) {
-      const key = `${item.name}|${item.price}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        allProducts.push(item);
-      }
-    }
-
-    const isNextDisabled = await page.evaluate((arrowSelector) => {
-      const btn = document.querySelector(arrowSelector);
-      if (!btn) return true;
-      return btn.disabled || btn.getAttribute("aria-disabled") === "true";
-    }, arrowSelector);
-
-    if (isNextDisabled) break;
-
-    try {
-      await page.click(arrowSelector);
-      await new Promise((res) => setTimeout(res, 1500));
-    } catch (err) {
-      console.log("🛑 Cannot click next or no more carousel items");
-      break;
-    }
-  }
-
-  return allProducts;
 }
