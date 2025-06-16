@@ -399,22 +399,26 @@ export async function scrapeInstacart3() {
                     product.querySelector(".e-1ip314g");
                   const price = priceEl ? priceEl.textContent.trim() : null;
 
-                  const img = product.querySelector("img");
-                  let imageUrls = [];
-                  if (img) {
-                    const srcset = img.getAttribute("srcset");
-                    if (srcset) {
-                      imageUrls = parseSrcset(srcset).slice(0, 2);
-                    } else if (img.src) {
-                      imageUrls = [img.src];
-                    }
-                  }
+                  // const img = product.querySelector("img");
+                  // let imageUrls = [];
+                  // if (img) {
+                  //   const srcset = img.getAttribute("srcset");
+                  //   if (srcset) {
+                  //     imageUrls = parseSrcset(srcset).slice(0, 2);
+                  //   } else if (img.src) {
+                  //     imageUrls = [img.src];
+                  //   }
+                  // }
+
+                  const linkEl = product.querySelector('a[role="button"]');
+                  const productUrl = linkEl ? linkEl.getAttribute("href") : null;
 
                   return {
                     name,
                     price,
-                    imageOne: imageUrls[0] || null,
-                    imageTwo: imageUrls[1] || null,
+                    // imageOne: imageUrls[0] || null,
+                    // imageTwo: imageUrls[1] || null,
+                    productUrl,
                   };
                 });
               });
@@ -432,8 +436,9 @@ export async function scrapeInstacart3() {
                 return {
                   name,
                   price,
-                  imageOne: item.imageOne,
-                  imageTwo: item.imageTwo,
+                  // imageOne: item.imageOne,
+                  // imageTwo: item.imageTwo,
+                  productUrl:item.productUrl,
                 };
               });
 
@@ -463,12 +468,14 @@ export async function scrapeInstacart3() {
             if (productsScraped > 0) {
               const result = allProducts.map((item) => ({
                 price: item.price,
-                image_urls: [item.imageOne, item.imageTwo],
+                // image_urls: [item.imageOne, item.imageTwo],
                 categoryName: searchItem?.category,
                 productName: item.name,
                 subcategoryName: searchItem?.subcategory,
+                productUrl: item?.productUrl,
               }));
 
+              console.log("result==============>", result);
               console.log(`🛒 Scraped ${result.length} products from ${searchItem.url}`);
               await saveCategorySubCategory(result);
               await delay(5000); // pause before next index

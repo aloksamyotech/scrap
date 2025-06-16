@@ -249,7 +249,7 @@ export async function saveCategorySubCategory(payload) {
         // );
 
         await axios.post(
-            `http://localhost:8080/newProduct`, payload
+            `http://localhost:8080/newProductUrl`, payload
         );
         // console.log("category SubCategory Uploaded in Bulk")
     } catch (error) {

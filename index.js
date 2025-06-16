@@ -12,7 +12,7 @@ const PORT = 7100
 
 app.use(express.json());
 app.use(cors());
-connectDB()
+// connectDB()
 // scrapeInstacart()
 // scrapeInstacart2();
 scrapeInstacart3();
