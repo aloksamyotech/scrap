@@ -160,7 +160,7 @@ export async function scrapeInstacart(searchURL) {
           };
         });
         console.log(`result========>`, result);
-        await saveCategorySubCategory(result);
+        // await saveCategorySubCategory(result);
       }
     };
 
@@ -312,7 +312,7 @@ export async function scrapeInstacart2() {
           }));
 
           console.log(`🛒 Scraped ${result.length} products from ${searchItem.url}`);
-          await saveCategorySubCategory(result);
+          // await saveCategorySubCategory(result);
 
           await delay(5000); // short pause between categories
 
@@ -391,7 +391,6 @@ export async function scrapeInstacart3() {
                     product.querySelector("h2") ||
                     product.querySelector("a") ||
                     product.querySelector("div");
-
                   const name = nameEl ? nameEl.textContent.trim() : null;
 
                   const priceEl =
@@ -410,14 +409,22 @@ export async function scrapeInstacart3() {
                     }
                   }
 
+                  const linkEl = product.querySelector('a[role="button"]');
+                  const productUrl = linkEl ? linkEl.getAttribute("href") : null;
+
                   return {
                     name,
                     price,
                     imageOne: imageUrls[0] || null,
                     imageTwo: imageUrls[1] || null,
+                    productUrl,
                   };
                 });
               });
+
+
+
+              console.log(`products`, products);
 
               const cleanedData = products.map((item) => {
                 let name = item.name || "";
@@ -470,7 +477,7 @@ export async function scrapeInstacart3() {
               }));
 
               console.log(`🛒 Scraped ${result.length} products from ${searchItem.url}`);
-              await saveCategorySubCategory(result);
+              // await saveCategorySubCategory(result);
               await delay(5000); // pause before next index
             } else {
               console.log(`🔁 No products found at ${searchItem.url}. Retrying...`);
@@ -496,3 +503,6 @@ export async function scrapeInstacart3() {
     if (browser) await browser.close();
   }
 }
+
+
+
